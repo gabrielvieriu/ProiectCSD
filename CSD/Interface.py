@@ -3,6 +3,8 @@ import sys
 import os
 import sqlite3
 import openssl as ssl
+import criptography as crip
+import time
 
 class Interfata:
     def __init__(self):
@@ -18,16 +20,27 @@ class Interfata:
         self.root.mainloop()
 
     def frame(self):
-        self.label1 = ctk.CTkLabel(self.root, text='Alege algoritmul', font=('Arial', 20, 'bold'))
+        # Eticheta comuna
+        self.label1 = ctk.CTkLabel(self.root, text='Alege algoritmul si biblioteca', font=('Arial', 20, 'bold'))
         self.label1.place(relx=0.5, rely=0.05, anchor='center')
 
+        # ComboBox pentru algoritm
         self.mode_combobox = ctk.CTkComboBox(self.root,
                                              values=["AES", "RSA"],
                                              state="readonly",
-                                             font=('Arial', 18),
-                                             dropdown_font=('Arial', 18))
+                                             font=('Arial', 16),
+                                             width=200)
         self.mode_combobox.set("AES")
-        self.mode_combobox.place(relx=0.5, rely=0.13, anchor='center')
+        self.mode_combobox.place(relx=0.3, rely=0.12, anchor='center')
+
+        # ComboBox pentru biblioteca
+        self.library_combobox = ctk.CTkComboBox(self.root,
+                                                values=["OpenSSL", "Cryptography"],
+                                                state="readonly",
+                                                font=("Arial", 16),
+                                                width=200)
+        self.library_combobox.set("OpenSSL")
+        self.library_combobox.place(relx=0.7, rely=0.12, anchor='center')
 
         # Selectez cheia AES
         self.label_key = ctk.CTkLabel(self.root, text='Alege cheia AES', font=('Arial', 16))
@@ -51,7 +64,6 @@ class Interfata:
             'corner_radius': 8
         }
 
-        ssl.generate_RSA_key("private.pem", "public.pem")
 
         self.button = ctk.CTkButton(**button_params,
                                     text='Cripteaza Fisier',
@@ -100,21 +112,11 @@ class Interfata:
         return [{"id": row[0], "key_data": row[1]} for row in cursor.fetchall()]
 
     def encrypt_file(self):
-        algorithm = self.mode_combobox.get()
-        if algorithm == "AES":
-            selected = self.key_combobox.get()
-            if not selected:
-                print("Nu ai selectat o cheie!")
-                return
-            key = selected
-            key_id = next((k["id"] for k in self.keys if k["key_data"] == key), None)
-            key = next((k["key_data"] for k in self.keys if k["id"] == key_id), None)
-            ssl.encrypt_AES("file.txt", "fila2.txt", key)
-        elif algorithm == "RSA":
-            ssl.encrypt_RSA("file.txt", "fila2.txt", "public.pem")
+        start_time = time.time()
 
-    def decrypt_file(self):
         algorithm = self.mode_combobox.get()
+        library = self.library_combobox.get()
+
         if algorithm == "AES":
             selected = self.key_combobox.get()
             if not selected:
@@ -122,9 +124,51 @@ class Interfata:
                 return
             key_id = next((k["id"] for k in self.keys if k["key_data"] == selected), None)
             key = next((k["key_data"] for k in self.keys if k["id"] == key_id), None)
-            ssl.decrypt_AES("fila2.txt", "file3.txt", key)
+
+            if library == "OpenSSL":
+                ssl.encrypt_AES("file.txt", "fila2.txt", key)
+            elif library == "Cryptography":
+                crip.encrypt_file_aes("file.txt", "fila2.txt", key)
+
         elif algorithm == "RSA":
-            ssl.decrypt_RSA("fila2.txt", "file3.txt", "private.pem")
+            if library == "OpenSSL":
+                ssl.generate_RSA_key("private.pem", "public.pem")
+
+                ssl.encrypt_RSA("file.txt", "fila2.txt", "public.pem")
+            elif library == "Cryptography":
+                crip.generate_rsa_keys()
+                crip.encrypt_file_rsa("file.txt", "fila2.txt", "public.pem")
+
+        elapsed_time = time.time() - start_time
+        print(f"Timp criptare: {elapsed_time:.4f} secunde")
+
+    def decrypt_file(self):
+        start_time = time.time()
+
+        algorithm = self.mode_combobox.get()
+        library = self.library_combobox.get()
+
+        if algorithm == "AES":
+            selected = self.key_combobox.get()
+            if not selected:
+                print("Nu ai selectat o cheie!")
+                return
+            key_id = next((k["id"] for k in self.keys if k["key_data"] == selected), None)
+            key = next((k["key_data"] for k in self.keys if k["id"] == key_id), None)
+
+            if library == "OpenSSL":
+                ssl.decrypt_AES("fila2.txt", "file3.txt", key)
+            elif library == "Cryptography":
+                crip.decrypt_file_aes("fila2.txt", "file3.txt", key)
+
+        elif algorithm == "RSA":
+            if library == "OpenSSL":
+                ssl.decrypt_RSA("fila2.txt", "file3.txt", "private.pem")
+            elif library == "Cryptography":
+                crip.decrypt_file_rsa("fila2.txt", "file3.txt", "private.pem")
+
+        elapsed_time = time.time() - start_time
+        print(f"Timp decriptare: {elapsed_time:.4f} secunde")
 
     def debug_chei(self):
         print("=== Chei AES ===")
@@ -172,6 +216,7 @@ class Interfata:
 
 if __name__ == "__main__":
     try:
+
         Interfata()
     except KeyboardInterrupt:
         print('Interrupted')
