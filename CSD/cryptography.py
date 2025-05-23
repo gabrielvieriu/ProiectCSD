@@ -21,6 +21,24 @@ def encrypt_file_aes(input_file, output_file, key):
 
     print(f"AES encryption (Cryptography) of {input_file} → {output_file}")
 
+def decrypt_file_aes(input_file, output_file, key):
+    key_bytes = key.encode('utf-8')[:32]
+
+    with open(input_file, 'rb') as f:
+        iv = f.read(16)
+        ciphertext = f.read()
+
+    cipher = Cipher(algorithms.AES(key_bytes), modes.CFB(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+
+    plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+
+    with open(output_file, 'wb') as f:
+        f.write(plaintext)
+
+    print(f"AES decryption (Cryptography) of {input_file} → {output_file}")
+
+
 def generate_rsa_keys(private_key_path='private_key.pem', public_key_path='public_key.pem', key_size=2048):
     private_key = rsa.generate_private_key(
         public_exponent=65537,
