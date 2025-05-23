@@ -1,14 +1,12 @@
 import customtkinter as ctk
 import sys
 import os
-
+import openssl as ssl
 class Interfata:
     def __init__(self):
-        # Appearance settings
-        ctk.set_appearance_mode("dark")  # "light", "dark", or "system"
-        ctk.set_default_color_theme("blue")  # Other options: "green", "dark-blue"
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
 
-        """Main Window"""
         self.root = ctk.CTk()
         self.root.geometry('700x530')
         self.root.title('Proiect CSD')
@@ -17,7 +15,6 @@ class Interfata:
         self.root.mainloop()
 
     def frame(self):
-        """Algorithm Selection"""
         self.label1 = ctk.CTkLabel(self.root,
                                    text='Alege algoritmul',
                                    font=('Arial', 20, 'bold'))
@@ -28,10 +25,9 @@ class Interfata:
                                              state="readonly",
                                              font=('Arial', 18),
                                              dropdown_font=('Arial', 18))
-        self.mode_combobox.set("AES")  # Set default value
+        self.mode_combobox.set("AES")
         self.mode_combobox.place(relx=0.5, rely=0.2, anchor='center')
 
-        """Buttons"""
         button_params = {
             'master': self.root,
             'width': 320,
@@ -40,21 +36,41 @@ class Interfata:
             'corner_radius': 8
         }
 
+        ssl.generate_RSA_key("private.pem", "public.pem")
+
         self.button = ctk.CTkButton(**button_params,
-                                    text='Cripteaza Fisier',    fg_color="#3abf5e")
+                                    text='Cripteaza Fisier',
+                                    fg_color="#3abf5e",
+                                    command=self.encrypt_file)
         self.button.place(relx=0.5, rely=0.35, anchor='center')
 
         self.button2 = ctk.CTkButton(**button_params,
-                                     text='Decripteaza Fisier')
+                                     text='Decripteaza Fisier',
+                                     command=self.decrypt_file)
         self.button2.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.button3 = ctk.CTkButton(**button_params,           fg_color="#FFA500",
+        self.button3 = ctk.CTkButton(**button_params, fg_color="#FFA500",
                                      text='Vizualizare Istoric')
         self.button3.place(relx=0.5, rely=0.65, anchor='center')
 
-        self.button4 = ctk.CTkButton(**button_params,           fg_color="#FF0000",
+        self.button4 = ctk.CTkButton(**button_params, fg_color="#FF0000",
                                      text='Selecteaza Locatia de Salvare')
         self.button4.place(relx=0.5, rely=0.8, anchor='center')
+
+    def encrypt_file(self):
+        algorithm = self.mode_combobox.get()
+        if algorithm == "AES":
+            ssl.encrypt_AES("file.txt", "fila2.txt", "cheie123")
+        elif algorithm == "RSA":
+            ssl.encrypt_RSA("file.txt", "fila2.txt", "public.pem")
+
+    def decrypt_file(self):
+        algorithm = self.mode_combobox.get()
+        if algorithm == "AES":
+            ssl.decrypt_AES("fila2.txt", "file3.txt", "cheie123")
+        elif algorithm == "RSA":
+            ssl.decrypt_RSA("fila2.txt", "file3.txt", "private.pem")
+
 
 
 if __name__ == "__main__":
